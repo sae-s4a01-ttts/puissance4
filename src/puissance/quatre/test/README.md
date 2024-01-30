@@ -1,0 +1,1 @@
+**Exécution des tests** python -m unittest src.puissance.quatre.test.joueurTest
