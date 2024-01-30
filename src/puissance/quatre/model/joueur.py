@@ -1,11 +1,11 @@
 class Joueur:
 
-    __nom = ""
+    __nom:str
 
-    def __init__(self, nom):
+    def __init__(self, nom:str) -> None:
         self.setNom(nom)
     
-    def setNom(self, nom:str):
+    def setNom(self, nom:str) -> None:
         """ @param nom la nouvelle valeur de self.__nom """
         if self.__isValid(nom) : self.__nom = nom
         else: raise ValueError("Le nom du joueur n'est pas valide")
