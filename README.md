@@ -1,3 +1,3 @@
 # puissance4
 
-1
+Tom Jammes, Samuel Lacam, Tony Lapeyre, Thomas Lemaire
