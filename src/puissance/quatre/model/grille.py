@@ -1,4 +1,4 @@
-from src.puissance.quatre.model.cellule import Cellule
+from cellule import Cellule
 
 class Grille:
 
@@ -28,7 +28,7 @@ class Grille:
     def __genererGrille(self) -> bool:
         if self.__grilleIsValid() and self.__setTaille():
             nombre_cellule = self.getTaille()
-            self.__grille = [Cellule for x in range(0, nombre_cellule)]
+            self.__grille = [Cellule() for x in range(0, nombre_cellule)]
             if len(self.getGrille()) == nombre_cellule: return True
         raise ValueError("Impossible de générer la grille de jeu")
 
@@ -43,6 +43,27 @@ class Grille:
     
     def getGrille(self) -> list[Cellule]:
         return self.__grille
+    
+    def getCellule(self, index:int) -> Cellule:
+        return self.getGrille()[index]
+    
+    def actionJoueur(self, numero_colone:int, id_joueur:int) -> None:
+        if not numero_colone > 0 and not numero_colone < self.getLongueur() + 1: raise ValueError("Impossible de jouer ici")
+        else:
+            jeton_place:bool = False
+            numero_cellule:int = 0
+            etage:int = 0
+            numero_colone -= 1
+            while(not jeton_place):
+                numero_cellule = numero_colone + etage
+                if self.__joueurPeutJouer(numero_cellule): jeton_place = self.getCellule(numero_cellule).estLibre()
+                else: raise ValueError("Impossible de jouer cette cellule")
+                etage += self.getLongueur()
+
+            if jeton_place: self.getCellule(numero_cellule).setValeur(id_joueur)
+    
+    def __joueurPeutJouer(self, numero_cellule:int) -> bool:
+        return numero_cellule >= 0 and numero_cellule < self.getTaille()
 
     def __longueurIsValid(self, longueur:int) -> bool:
         return longueur % 7 == 0 and longueur > 0 and longueur < 29
@@ -54,4 +75,56 @@ class Grille:
         return self.getLongueur() != None and self.getLongueur() != None
     
     def __str__(self) -> str:
-        return ""
+        resultat:str = ""
+        ligne:str = "|  "
+
+        for i in range(0, self.getTaille()):
+            ligne += str(self.getCellule(i)) + "  |  "
+
+            if (i + 1) % 7 == 0:
+                resultat = ligne + "\n" + resultat
+                ligne = "|  "
+
+        for x in range(1, self.getLongueur() + 1):
+            resultat += "   " + str(x) + "  "
+
+        return resultat
+
+g1 = Grille()
+
+try:
+    g1.actionJoueur(1,1)
+except ValueError:
+    print('Erreur de placement')
+
+try:
+    g1.actionJoueur(1,2)
+except ValueError:
+    print('Erreur de placement')
+
+try:
+    g1.actionJoueur(1,1)
+except ValueError:
+    print('Erreur de placement')
+
+try:
+    g1.actionJoueur(1,2)
+except ValueError:
+    print('Erreur de placement')
+
+try:
+    g1.actionJoueur(1,1)
+except ValueError:
+    print('Erreur de placement')
+
+try:
+    g1.actionJoueur(1,2)
+except ValueError:
+    print('Erreur de placement')
+
+try:
+    g1.actionJoueur(1,1)
+except ValueError:
+    print('Erreur de placement')
+
+print(g1)
