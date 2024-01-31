@@ -123,8 +123,34 @@ except ValueError:
     print('Erreur de placement')
 
 try:
-    g1.actionJoueur(1,1)
+    g1.actionJoueur(2,1)
 except ValueError:
     print('Erreur de placement')
 
+
 print(g1)
+
+## Puissance 4
+##
+##              === Menu ===
+##
+## 1 - Nouvelle Partie
+## 2 - Options
+## 3 - Crédits
+## 4 - Quitter
+
+##              === Nouvelle Partie ===
+##
+## Choisir un nom de joueur :
+
+##              === Options ===
+##
+## 1 - Niveau de l'ia (1 à 5) : 1
+## 2 - Vous êtes : Joueur 1
+## [esc] - Retour
+
+##              === Crédits ===
+##
+## Tom Jammes, Samuel Lacam, Tony Lapeyre, Thomas Lemaire
+##
+## [esc] - retour
