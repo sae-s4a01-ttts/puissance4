@@ -14,7 +14,7 @@ class Cell:
     def get_value(self) -> int:
         return self.__value
     
-    def is_ok(self) -> bool:
+    def is_free(self) -> bool:
         return self.__value == self.__DEFAULT_VALUE
     
     def __to_string(self) -> str:

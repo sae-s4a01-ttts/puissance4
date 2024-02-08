@@ -45,6 +45,9 @@ class Column:
     def get_column(self) -> list[Cell]:
         return self.__column
     
+    def get_cell(self, index:int) -> Cell:
+        return self.__column[index]
+    
     def get_hashcode(self) -> str:
         return self.__hashcode
     
@@ -52,6 +55,3 @@ class Column:
         bin_key:bin = ''.join(map(str, clear_column))
         dec_key:int = int(bin_key, 2)
         return dec_key
-    
-    def __str__(self) -> str:
-        return ''.join(map(str, [cell.get_value() for cell in self.__column]))

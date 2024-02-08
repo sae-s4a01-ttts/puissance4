@@ -44,15 +44,22 @@ class Grid:
     def get_grid(self) -> list[Column]:
         return self.__grid
     
+    def __get_column(self, index:int) -> Column:
+        return self.__grid[index]
+    
     def get_hashcode(self) -> hex:
         return self.__hashcode
     
-g = Grid()
-
-g.play_column(0)
-g.play_column(1)
-g.play_column(6)
-g.play_column(3)
-
-ghash = g.get_hashcode()
-print(ghash)
+    def __str__(self) -> str:
+        display_grid:str = ""
+        row_in_grid:str = ""
+        
+        for i in range(0, 6):
+            row_in_grid = "⎹ "
+            for j in range(0, self.__WIDTH):
+                row_in_grid += str(self.__get_column(j).get_cell(i)) + " ⎹ "
+            display_grid = row_in_grid + "\n" +  display_grid
+            
+        display_grid += "  1   2   3   4   5   6   7"
+        
+        return display_grid
