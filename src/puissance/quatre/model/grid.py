@@ -16,7 +16,9 @@ class Grid:
 
     def __generate_grid(self) -> bool:
         grid_with_columns = [Column() for x in range(0, self.__WIDTH)]
-        return self.__set_grid(grid_with_columns)
+        self.__set_grid(grid_with_columns)
+        self.__generate_hashcode()
+        return True
     
     def __generate_hashcode(self) -> bool:
         all_column_hashcode:list = [col.get_hashcode() for col in self.__grid]
@@ -47,12 +49,10 @@ class Grid:
     
 g = Grid()
 
+g.play_column(0)
 g.play_column(1)
 g.play_column(6)
 g.play_column(3)
 
 ghash = g.get_hashcode()
 print(ghash)
-
-print(sys.getsizeof(g))
-print(sys.getsizeof(ghash))
