@@ -8,8 +8,9 @@ class Column:
     __next_cell:int
     __hashcode:str
     
-    def __init__(self):
-        self.__generate_column()
+    def __init__(self, hashcode = '000'):
+        if hashcode != '000': self.generate_new_column_by_hashcode(hashcode)
+        else: self.__generate_column()
         
     def __generate_column(self) -> bool:
         self.__column = [Cell() for x in range(0, self.__HEIGHT)]
@@ -51,7 +52,28 @@ class Column:
     def get_hashcode(self) -> str:
         return self.__hashcode
     
+    def generate_new_column_by_hashcode(self, hashcode:str) -> bool:
+        read_hashcode:int = int(hashcode)
+        prefix_key:int = read_hashcode // 10
+        suffix_key:int = read_hashcode % 10
+        column_prefix_bin:list[Cell] = self.__dec_to_colbin(prefix_key)
+        while len(column_prefix_bin) != suffix_key: column_prefix_bin.append(Cell(0))
+        while len(column_prefix_bin) != self.__HEIGHT: column_prefix_bin.append(Cell())
+        self.__column = column_prefix_bin
+        self.__generate_hashcode()
+    
     def __colbin_to_coldec(self, clear_column:list[Cell]) -> int:
         bin_key:bin = ''.join(map(str, clear_column))
         dec_key:int = int(bin_key, 2)
         return dec_key
+    
+    def __dec_to_colbin(self, prefix:int) -> list[Cell]:
+        prefix_bin:bin = bin(prefix)
+        column_prefix_bin:list[Cell] = [Cell(int(x)) for x in prefix_bin[2:]]
+        column_prefix_bin.reverse()
+        return column_prefix_bin
+
+c = Column('096')
+c1 = Column()
+print(c.get_hashcode())
+print(c1.get_hashcode())
