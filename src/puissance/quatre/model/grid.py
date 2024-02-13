@@ -63,3 +63,9 @@ class Grid:
         display_grid += "  1   2   3   4   5   6   7"
         
         return display_grid
+    
+
+# g = Grid()
+# g.play_column(5)
+
+# print(g.get_hashcode())
