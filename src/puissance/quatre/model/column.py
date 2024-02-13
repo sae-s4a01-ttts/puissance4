@@ -72,8 +72,3 @@ class Column:
         column_prefix_bin:list[Cell] = [Cell(int(x)) for x in prefix_bin[2:]]
         column_prefix_bin.reverse()
         return column_prefix_bin
-
-# c = Column("001")
-# c1 = Column()
-# print(c.get_hashcode())
-# print(c1.get_hashcode())
