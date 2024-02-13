@@ -18,13 +18,6 @@ class Cell:
         return self.__value == self.__DEFAULT_VALUE
     
     def __to_string(self) -> str:
-        # match self.__value:
-        #     case 0:
-        #         return "X"
-        #     case 1:
-        #         return "O"
-        #     case _:
-        #         return " "
         return "X" if self.__value == 0 else "O" if self.__value == 1 else " "
 
     def __str__(self) -> str:
