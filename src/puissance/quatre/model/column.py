@@ -46,6 +46,9 @@ class Column:
     def get_column(self) -> list[Cell]:
         return self.__column
     
+    def get_next_cell(self) -> int:
+        return self.__next_cell
+    
     def get_cell(self, index:int) -> Cell:
         return self.__column[index]
     
@@ -60,6 +63,7 @@ class Column:
         while len(column_prefix_bin) != suffix_key: column_prefix_bin.append(Cell(0))
         while len(column_prefix_bin) != self.__HEIGHT: column_prefix_bin.append(Cell())
         self.__column = column_prefix_bin
+        self.__next_cell = suffix_key
         self.__generate_hashcode()
     
     def __colbin_to_coldec(self, clear_column:list[Cell]) -> int:
