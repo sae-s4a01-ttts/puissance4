@@ -1,5 +1,6 @@
 from grid import Grid
 from player import Player
+from random import randint
 
 class Game:
     
@@ -16,7 +17,9 @@ class Game:
         self.__solo_game()
         while self.__in_game:
             self.__display_grid()
-            self.__play()
+            if not self.__play() == None: self.__in_game = False
+        self.__display_grid()
+        print("partie finie")
        
     def __solo_game(self) -> None:
         player_order:str = self.__define_player_order()
@@ -35,9 +38,12 @@ class Game:
         new_player:Player = Player(player_name)
         return new_player
     
-    def __play(self) -> bool:
+    def __play(self) -> int:
         play_placement:int = int(input("Placer votre pion : "))
-        self.__grid.play_column(play_placement - 1)
+        if self.__grid.play_column(play_placement - 1): return 0
+        
+        # Placement aléatoire de l'ordinateur
+        if self.__grid.play_column(randint(1,7) - 1): return 1
         
     def __display_grid(self) -> None:
         print(str(self.__grid))
