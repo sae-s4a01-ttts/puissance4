@@ -44,7 +44,7 @@ class Game:
         if self.__grid.play_column(play_placement - 1): return 0
         
         # Placement aléatoire de l'ordinateur
-        if self.__grid.play_column(computer.choix_colonne(self.__grid.get_hashcode())): return 1
+        if self.__grid.play_column(computer.choix_colonne(self.__grid)): return 1
         
     def __display_grid(self) -> None:
         print(str(self.__grid))

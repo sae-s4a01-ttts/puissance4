@@ -15,7 +15,7 @@ class Grid:
 
     def __generate_grid(self) -> bool:
         grid_with_columns = [Column() for x in range(0, self.__WIDTH)]
-        self.__set_grid(grid_with_columns)
+        self.set_grid(grid_with_columns)
         self.__generate_hashcode()
         return True
     
@@ -103,7 +103,7 @@ class Grid:
         self.__generate_hashcode()
         return self.maybe_its_win(index)
     
-    def __set_grid(self, add_columns) -> bool:
+    def set_grid(self, add_columns) -> bool:
         self.__grid = add_columns
         return True
     
