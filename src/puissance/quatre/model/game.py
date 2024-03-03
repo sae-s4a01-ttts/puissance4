@@ -7,7 +7,7 @@ class Game:
     
     __in_game:bool
     __grid:Grid
-    __players:dict = {"1": None, "2": None}
+    __players = [None, None]
     
     def __init__(self) -> None:
         self.__in_game = True
@@ -16,35 +16,56 @@ class Game:
     
     def main(self) -> None:
         self.__solo_game()
+        player_order:int = randint(0,1)
+        if player_order == 0:
+            print("Vous jouez les pions X")
+        else:
+            print("Vous jouez les pions O")
         while self.__in_game:
-            self.__display_grid()
-            if not self.__play() == None: self.__in_game = False
+            joueur_gagnant = self.__play(player_order)
+            if not joueur_gagnant == None: self.__in_game = False
         self.__display_grid()
-        print("partie finie")
+        print("Victoire de ", self.__players[joueur_gagnant].get_name())
        
     def __solo_game(self) -> None:
-        player_order:str = self.__define_player_order()
         new_player:Player = self.__define_new_player()
-        self.__players[player_order] = new_player
-
-        if player_order == "1": self.__players["2"] = Player("IA")
-        else: self.__players["1"] = Player("IA")
-        
-    def __define_player_order(self) -> str:
-        player_order:str = str(input("Vous voulez être le joueur 1 ou 2 ? : "))
-        return player_order
+        self.__players[0] = new_player
+        self.__players[1] = Player("IA")
          
     def __define_new_player(self) -> Player:
-        player_name:str = str(input("Choisir un nom de joueur : "))
+        player_name = ""
+        while player_name == "":
+            player_name = str(input("Choisir un nom de joueur : "))
+            if player_name == "": print("Veuillez rentrer votre pseudo")
         new_player:Player = Player(player_name)
         return new_player
     
-    def __play(self) -> int:
-        play_placement:int = int(input("Placer votre pion : "))
+    def __play(self, ordre_jeu) -> int:
+        if ordre_jeu == 0:
+            if self.__play_joueur() == 0: return 0
+            if self.__play_ia() == 1: return 1
+        else:
+            if self.__play_ia() == 1: return 1
+            if self.__play_joueur() == 0: return 0
+
+    def __play_joueur(self) -> int:
+        self.__display_grid()
+        # Gestion saisie joueur
+        saisie_joueur = ""
+        play_placement = 0
+        while play_placement < 1 or play_placement > 7:
+            saisie_joueur = input("Placer votre pion : ")
+            if saisie_joueur.isdigit():
+                play_placement:int = int(saisie_joueur)
+            if play_placement < 1 or play_placement > 7:
+                print("Veuillez rentrer un nombre entre 1 et 7")
+            
         if self.__grid.play_column(play_placement - 1): return 0
-        
+
+    def __play_ia(self) -> int:
         # Placement aléatoire de l'ordinateur
         if self.__grid.play_column(computer.choix_colonne(self.__grid)): return 1
+    
         
     def __display_grid(self) -> None:
         print(str(self.__grid))
