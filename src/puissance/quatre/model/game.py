@@ -43,13 +43,13 @@ class Game:
     def __play(self, ordre_jeu) -> int:
         if ordre_jeu == 0:
             if self.__play_joueur() == 0: return 0
-            if self.__play_ia() == 1: return 1
+            if self.__play_ia(ordre_jeu) == 1: return 1
         else:
-            if self.__play_ia() == 1: return 1
+            if self.__play_ia(ordre_jeu) == 1: return 1
             if self.__play_joueur() == 0: return 0
 
     def __play_joueur(self) -> int:
-        self.__display_grid()
+        self.__display_grid() 
         # Gestion saisie joueur
         saisie_joueur = ""
         play_placement = 0
@@ -62,9 +62,9 @@ class Game:
             
         if self.__grid.play_column(play_placement - 1): return 0
 
-    def __play_ia(self) -> int:
+    def __play_ia(self, ordre_jeu) -> int:
         # Placement aléatoire de l'ordinateur
-        if self.__grid.play_column(computer.choix_colonne(self.__grid)): return 1
+        if self.__grid.play_column(computer.choix_colonne(self.__grid, ordre_jeu)): return 1
     
         
     def __display_grid(self) -> None:

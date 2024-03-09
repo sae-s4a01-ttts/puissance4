@@ -1,539 +1,485 @@
-from column import Column 
 from grid import Grid
+import copy
 
-lvl_ia = 3
+def parse_coldec(coldec):
+    prefix_dec = int(coldec[:2])
+    suffix_dec = int(coldec[-1])
+
+    return (prefix_dec, suffix_dec)
+
+def coldec_to_colbin(coldec):
+    (prefix_dec, suffix_dec) = parse_coldec(coldec)
+
+    if (prefix_dec, suffix_dec) == (0, 0): return ""
+
+    prefix_bin = bin(prefix_dec)[2:]
+    len_prefix_bin = len(prefix_bin)
+    col_complement = (suffix_dec - len_prefix_bin)
+
+    colbin = col_complement * '0' + prefix_bin
+
+    return colbin
+
+def colbin_to_coldec(colbin):
+    return str(int(colbin, 2)).zfill(2) + str(len(colbin)) if colbin != "" else "000"
+
+def binary_complement(binary_string):
+    ones_complement = ""
+
+    for bit in binary_string:
+        if bit == '0': ones_complement += '1'
+        elif bit == '1': ones_complement += '0'
+    
+    return ones_complement
+
+def consecutive_vertical_ones(colbin:str) -> int:
+    current_ones:int = 0
+
+    for bit in colbin:
+        if bit == '1': current_ones += 1
+        else: return current_ones
+
+    return current_ones
+
+def eval_vertical_score(colsbin:list[str], column:int) -> int:
+    """
+    Fonction qui permet de calculer le score vertical d'une fonction.
+    @params colsbin est une liste de hashcode de colonne
+    @params column est la colonne de colsbin dont on veut calculer le score,
+    @return le score vertical de la colonne
+    """
+
+    # Calcul le score en hauteur d'une colonne
+    height_score:int
+    # Calcul le score d'un enchainement d'un même pion
+    sequence_score:int
+    # Calcul du score final en ajoutant $height_score avec $sequence_score
+    calculated_score:int
+
+    # Colonne dont on veut calculer le score en bianire
+    active_colbin:str = colsbin[column]
+
+    # Permet de lire le hashcode de la colonne active et d'en tirer sa valeur et sa hauteur
+    (prefix_coldec , suffix_coldec) = parse_coldec(colbin_to_coldec(active_colbin))
+
+    # Permet de connaitre le nombre de pion d'une même valeur qui se suivent
+    ones_sequence:int = consecutive_vertical_ones(active_colbin)
+
+    height_score = 18.00 - suffix_coldec ** 1.70
+    
+    height_score = 0.00 if ( prefix_coldec < 2.00 ** (suffix_coldec - 1.00)) or \
+                           ( suffix_coldec > 2.00 and suffix_coldec - 2.00 > ones_sequence ) \
+                        else height_score
+    
+    height_score += 4.00 if suffix_coldec < 1.00 else 0.00 
+
+    sequence_score = 0.00 if height_score < 1.00 \
+                          else 4.00 ** ( ones_sequence + 1.00 )
+
+    calculated_score = height_score + sequence_score
+
+    return calculated_score
+
+def eval_positive_diagonal_score(colsbin:list[str], column:int) -> int:
+    
+    sequence_score:int
+    calculated_score:int
+
+    range_column:int = len(colsbin)
+    height_column:int = len(colsbin[column])
+
+    prev_counter_ones:int = 0
+    next_counter_ones:int = 0
+    counter_holes:int = 1
+    prev_hole:bool = False
+    next_hole:bool = False
+
+    ones_sequence:int = 0
+
+    prev_height_column_tmp:int = height_column
+    next_height_column_tmp:int = height_column
+
+    for col in range(column - 1, -1, -1):
+
+        colbin_tmp = colsbin[col][::-1]
+        height_colbin_tmp = len(colbin_tmp)
+        prev_height_column_tmp = prev_height_column_tmp - 1
+
+        if prev_height_column_tmp > -1 and prev_height_column_tmp < height_colbin_tmp:
+            if colbin_tmp[prev_height_column_tmp] == '1':
+                prev_counter_ones += 1
+                ones_sequence += 1 if not prev_hole else 0
+            else:
+                break
+        elif prev_height_column_tmp > -1:
+            prev_hole = True
+            counter_holes += 1
+
+    for col in range(column + 1, range_column):
+
+        colbin_tmp = colsbin[col][::-1]
+        height_colbin_tmp = len(colbin_tmp)
+        next_height_column_tmp = next_height_column_tmp + 1
+
+        if next_height_column_tmp < 6 and next_height_column_tmp < height_colbin_tmp:
+            if colbin_tmp[next_height_column_tmp] == '1':
+                next_counter_ones += 1
+                ones_sequence += 1 if not next_hole else 0
+            else:
+                break
+        elif next_height_column_tmp < 6:
+            next_hole = True
+            counter_holes += 1
+
+    counter_ones:int = prev_counter_ones + next_counter_ones
+
+    ones_unsequenced: int = ones_sequence - counter_ones
+
+    sequence_score = 4.00 ** (ones_sequence + 1.00) + 2.00 ** (ones_unsequenced + 1.00) + counter_holes * 2
+
+    calculated_score = sequence_score if counter_ones + counter_holes > 3 else 0.00
+    
+    return calculated_score
+
+
+def eval_negative_diagonal_score(colsbin:list[str], column:int) -> int:
+    
+    sequence_score:int
+    calculated_score:int
+
+    range_column:int = len(colsbin)
+    height_column:int = len(colsbin[column])
+
+    prev_counter_ones:int = 0
+    next_counter_ones:int = 0
+    counter_holes:int = 1
+    prev_hole:bool = False
+    next_hole:bool = False
+
+    ones_sequence:int = 0
+
+    prev_height_column_tmp:int = height_column
+    next_height_column_tmp:int = height_column
+
+    for col in range(column + 1, range_column):
+
+        colbin_tmp = colsbin[col][::-1]
+        height_colbin_tmp = len(colbin_tmp)
+        prev_height_column_tmp = prev_height_column_tmp - 1
+
+        if prev_height_column_tmp > -1 and prev_height_column_tmp < height_colbin_tmp:
+            if colbin_tmp[prev_height_column_tmp] == '1':
+                prev_counter_ones += 1
+                ones_sequence += 1 if not prev_hole else 0
+            else:
+                break
+        elif prev_height_column_tmp > -1:
+            prev_hole = True
+            counter_holes += 1
+
+    for col in range(column - 1, -1, -1): 
+
+        colbin_tmp = colsbin[col][::-1]
+        height_colbin_tmp = len(colbin_tmp)
+        next_height_column_tmp = next_height_column_tmp + 1
+
+        if next_height_column_tmp < 6 and next_height_column_tmp < height_colbin_tmp:
+            if colbin_tmp[next_height_column_tmp] == '1':
+                next_counter_ones += 1
+                ones_sequence += 1 if not next_hole else 0
+            else:
+                break
+        elif next_height_column_tmp < 6:
+            next_hole = True
+            counter_holes += 1
+
+    counter_ones:int = prev_counter_ones + next_counter_ones
+
+    ones_unsequenced: int = ones_sequence - counter_ones
+
+    sequence_score = 4.00 ** (ones_sequence + 1.00) + 2.00 ** (ones_unsequenced + 1.00) + counter_holes * 2
+
+    calculated_score = sequence_score if counter_ones + counter_holes > 3 else 0.00
+    
+    return calculated_score
+
+
+def eval_horizontal_score(colsbin:list[str], column:int) -> int:
+    """
+    Fonction qui permet de calculer le score horizontal d'une fonction.
+    @params colsbin est une liste de hashcode de colonne
+    @params column est la colonne de colsbin dont on veut calculer le score,
+    @return le score horizontal de la colonne
+    """
+
+    width_score:int
+    sequence_score:int
+    calculated_score:int
+
+    range_column:int = len(colsbin)
+    height_column:int = len(colsbin[column])
+
+    prev_counter_ones:int = 0
+    next_counter_ones:int = 0
+    counter_holes:int = 1
+    prev_hole:bool = False
+    next_hole:bool = False
+
+    ones_sequence:int = 0
+
+    # Analyse des colonnes qui précèdent la colonne active
+    for col in range(column - 1, -1, -1):
+        colbin_tmp = colsbin[col][::-1]
+        height_colbin_tmp = len(colbin_tmp)
+        if height_column < height_colbin_tmp:
+            if colbin_tmp[height_column] == '1':
+                prev_counter_ones += 1
+                ones_sequence += 1 if not prev_hole else 0
+            else:
+                break
+        else:
+            prev_hole = True
+            counter_holes += 1
+
+    # Analyse des colonnes qui succèdent la colonne active
+    for col in range(column + 1, range_column):
+        colbin_tmp = colsbin[col][::-1]
+        height_colbin_tmp = len(colbin_tmp)
+        if height_column < height_colbin_tmp:
+            if colbin_tmp[height_column] == '1':
+                next_counter_ones += 1
+                ones_sequence += 1 if not next_hole else 0
+            else:
+                break
+        else:
+            next_hole = True
+            counter_holes += 1
+        
+    width_score = range_column / (range_column ** 0.50) * range_column
+
+    counter_ones:int = prev_counter_ones + next_counter_ones
+
+    ones_unsequenced:int = ones_sequence - counter_ones
+
+    sequence_score = 4.00 ** (ones_sequence + 1.00) + 2.00 ** (ones_unsequenced + 1.00) + counter_holes * 2 
+
+    calculated_score = width_score + sequence_score if counter_ones + counter_holes > 3 else 0.00
+
+    return calculated_score
+
+def eval_victory(grid) -> bool:
+
+    def eval_vertical_victory(grid) -> bool:
+        
+        victory = False
+
+        for col in grid:
+            if len(col) > 3:
+                ones_sequence = 0
+                for cel in col:
+                    if cel == '1': ones_sequence += 1
+                    else: ones_sequence = 0
+                    if ones_sequence > 3:
+                        victory = True
+                        break
+            if victory: break
+
+        return victory
+    
+    def eval_horizontal_victory(grid) -> bool:
+
+        victory = False
+
+        for line in range(0, len(grid)):
+            ones_sequence = 0
+            for col in grid:
+                col = col[::-1]
+                if line < len(col):
+                    if col[line] == '1': ones_sequence += 1
+                    else: ones_sequence = 0
+                else: ones_sequence = 0
+                if ones_sequence > 3:
+                    victory = True
+                    break
+            if victory: break
+        
+        return victory
+                
+    
+    global_victory = False
+
+    global_victory = eval_vertical_victory(grid)
+
+    global_victory = eval_horizontal_victory(grid) if not global_victory else global_victory
+
+    # global_victory = eval_positive_diagonal_victory(grid) if not global_victory else global_victory
+
+    # global_victory = eval_negative_diagonal_victory(grid) if not global_victory else global_victory
+
+    return global_victory
+
+
+def separate_string(input_str):
+    # Initialisation du tableau pour stocker les morceaux
+    separated_strings = []
+    
+    # Vérification si la longueur de la chaîne est divisible par 3
+    if len(input_str) % 3 == 0:
+        # Boucle pour parcourir la chaîne de caractères
+        for i in range(0, len(input_str), 3):
+            # Ajout du morceau de 3 caractères au tableau
+            separated_strings.append(input_str[i:i+3])
+    else:
+        # Si la longueur n'est pas divisible par 3, ajouter des caractères
+        # pour que la dernière partie soit de longueur 3
+        input_str += ' ' * (3 - (len(input_str) % 3))
+        
+        # Boucle pour parcourir la chaîne de caractères
+        for i in range(0, len(input_str), 3):
+            # Ajout du morceau de 3 caractères au tableau
+            separated_strings.append(input_str[i:i+3])
+    
+    return separated_strings
+
+# Exemple d'utilisation de la fonction
+# input_string = "001011011013011000000"
+input_string = "001011011013000011000"
+
+c = separate_string(input_string)
+c = [coldec_to_colbin(col) for col in c]
+c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
+
+def X_eval(c):
+    c_eval = [0, 0, 0, 0, 0, 0, 0]
+    grid = c[3][0]
+
+    for col in range(0, len(c)): 
+        c_eval[col] += eval_vertical_score(c[col][0], c[col][1])
+        c_eval[col] += eval_horizontal_score(c[col][0], c[col][1])
+        c_eval[col] += eval_positive_diagonal_score(c[col][0], c[col][1])
+        c_eval[col] += eval_negative_diagonal_score(c[col][0], c[col][1])
+
+    Xe = sum(c_eval)
+
+    Xe += 10000.00 if eval_victory(grid) else 0
+    return Xe
+
+def O_eval(c):
+    c_eval = [0, 0, 0, 0, 0, 0, 0]
+    grid = []
+
+    for col in range(0, len(c)): 
+        colcomp = [[binary_complement(col) for col in c[col][0]], c[col][1] ]
+        grid = colcomp[0] if len(colcomp[0]) == 7 else grid
+        c_eval[col] += eval_vertical_score(colcomp[0], colcomp[1])
+        c_eval[col] += eval_horizontal_score(colcomp[0], colcomp[1])
+        c_eval[col] += eval_positive_diagonal_score(colcomp[0], colcomp[1])
+        c_eval[col] += eval_negative_diagonal_score(colcomp[0], colcomp[1])
+
+    Oe = sum(c_eval)
+
+    Oe += 10000.00 if eval_victory(grid) else 0
+    return Oe
+
+def separate_string(input_str):
+    # Initialisation du tableau pour stocker les morceaux
+    separated_strings = []
+    
+    # Vérification si la longueur de la chaîne est divisible par 3
+    if len(input_str) % 3 == 0:
+        # Boucle pour parcourir la chaîne de caractères
+        for i in range(0, len(input_str), 3):
+            # Ajout du morceau de 3 caractères au tableau
+            separated_strings.append(input_str[i:i+3])
+    else:
+        # Si la longueur n'est pas divisible par 3, ajouter des caractères
+        # pour que la dernière partie soit de longueur 3
+        input_str += ' ' * (3 - (len(input_str) % 3))
+        
+        # Boucle pour parcourir la chaîne de caractères
+        for i in range(0, len(input_str), 3):
+            # Ajout du morceau de 3 caractères au tableau
+            separated_strings.append(input_str[i:i+3])
+    
+    return separated_strings
 
 def traduction_grille(grille):
     grilleVide = "000000000000000000000"
     grilleDec:int = int(grille,16)
     grilleEntiere = grilleVide[0:21 - len(str(grilleDec))] + str(grilleDec)
 
-    c1 = Column(grilleEntiere[0:3])
-    c2 = Column(grilleEntiere[3:6])
-    c3 = Column(grilleEntiere[6:9])
-    c4 = Column(grilleEntiere[9:12])
-    c5 = Column(grilleEntiere[12:15])
-    c6 = Column(grilleEntiere[15:18])
-    c7 = Column(grilleEntiere[18:21])
-
-    return [c1,c2,c3,c4,c5,c6,c7]
+    return grilleEntiere
 
 
 # Simule la liste des coups pour annalyser les grilles générer et donner un score à chaque grille
-def analyse_grille(grille_actuelle, coups_simulation):
-    score = 0 # Score initial de la grille simulée
-    prochain_joueur = 1 # L'IA est toujours le joueur avec les pions 1
-    grille_traduite = traduction_grille(grille_actuelle.get_hashcode())
-    grille_test_victoire = Grid()
-    try:
-        # Simulation des différents coups avant le calcul de la grille
-        for i in coups_simulation:
-            grille_traduite[i].play_cell(prochain_joueur)
-            # Vérifie cas de victoire : retourne + 1000 si prochain_joueur = 1 (= IA qui a joué) et -1000 sinon 
-            grille_test_victoire.set_grid(grille_traduite)
-            if (grille_test_victoire.maybe_its_win(i)):
-                if (prochain_joueur == lvl_ia%2):
-                    return 1000
-                else:
-                    return -1000
-            prochain_joueur = (prochain_joueur + 1)%2
+def fonction_evaluation(grille_actuelle):
+    c = separate_string(grille_actuelle)
+    c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
 
-        score += algo_attaque(grille_traduite,coups_simulation[len(coups_simulation)-1])
-        if score < 1000:
-            score += algo_defense(grille_traduite)
-        return score
-    except:
-        return -10000 # Cas ou colonne injouable car pleine
+    eX = X_eval(c)
+    eO = O_eval(c)
 
+    e = sum(eX) - sum(eO)
 
-# Analyse les différentes possibilités de jeu pour voir si il y a un cas de victoire
-# S'arrète en cas de victoire trouvée
-def algo_attaque(grille, coup_simule):
-    score_attaque = 0
-    hauteur_colonne = (int(grille[coup_simule].get_hashcode())%10)-1
-
-    # analyse des différentes lignes de jeu (horizontales, diagonales, verticales)
-    i = 1
-    score_ligne = 0 # Utilisé pour vérifier les score lorsqu'on joue dans le milieu d'un ligne ex : XX(0)X
-    while i <= 7 and score_attaque < 1000:
-        if i == 1:
-            score_ligne += analyse_horizontal_gauche(grille, hauteur_colonne, coup_simule, False)
-        elif i == 2:
-            score_ligne += analyse_horizontal_droit(grille, hauteur_colonne, coup_simule, False)
-            if score_ligne >= 120:
-                score_ligne += 1000
-            score_attaque += score_ligne
-            score_ligne = 0
-        elif i == 3:
-            score_attaque += analyse_vertical_bas(grille, hauteur_colonne, coup_simule, False)
-        elif i == 4:
-            score_ligne += analyse_diag_gauche_bas(grille, hauteur_colonne, coup_simule, False)
-        elif i == 5:
-            score_ligne += analyse_diag_droit_haut(grille, hauteur_colonne, coup_simule, False)
-            if score_ligne >= 120:
-                score_ligne += 1000
-            score_attaque += score_ligne
-            score_ligne = 0
-        elif i == 6:
-            score_ligne += analyse_diag_gauche_haut(grille, hauteur_colonne, coup_simule, False)
-        elif i == 7:
-            score_ligne += analyse_diag_droit_bas(grille, hauteur_colonne, coup_simule, False)
-            if score_ligne >= 120:
-                score_ligne += 1000
-            score_attaque += score_ligne
-            score_ligne = 0
-        i += 1
-
-    return score_attaque
-
-def algo_defense(grille):
-    score_defense = 0
-    c = 0
-    while c < 7 and score_defense > -1000:
-        hauteur_colonne_simu = int(grille[c].get_hashcode())%10
-        if hauteur_colonne_simu < 6:
-            # analyse de la position
-            i = 1
-            score_ligne = 0 # Utilisé pour vérifier les score lorsqu'on joue dans le milieu d'un ligne ex : XX(0)X
-            while i <= 7 and score_defense > -1000:
-                if i == 1:
-                    score_ligne += analyse_horizontal_gauche(grille, hauteur_colonne_simu, c, True)
-                elif i == 2:
-                    score_ligne += analyse_horizontal_droit(grille, hauteur_colonne_simu, c, True)
-                    if score_ligne <= -120:
-                        score_ligne += -1000
-                    score_defense += score_ligne
-                    score_ligne = 0
-                elif i == 3:
-                    score_defense += analyse_vertical_bas(grille, hauteur_colonne_simu, c, True)
-                elif i == 4:
-                    score_ligne += analyse_diag_gauche_bas(grille, hauteur_colonne_simu, c, True)
-                elif i == 5:
-                    score_ligne += analyse_diag_droit_haut(grille, hauteur_colonne_simu, c, True)
-                    if score_ligne <= -120:
-                        score_ligne += -1000
-                    score_defense += score_ligne
-                    score_ligne = 0
-                elif i == 6:
-                    score_ligne += analyse_diag_droit_bas(grille, hauteur_colonne_simu, c, True)
-                elif i == 7:
-                    score_ligne += analyse_diag_gauche_haut(grille, hauteur_colonne_simu, c, True)
-                    if score_ligne <= -120:
-                        score_ligne += -1000
-                    score_defense += score_ligne
-                    score_ligne = 0
-                    
-                i += 1
-        c += 1
-    return score_defense
-
-def analyse_horizontal_gauche(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and coup_simule - i >= 0 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule-i].get_cell(hauteur_colonne).get_value() == (lvl_ia+1)%2):
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:    
-            if (grille[coup_simule-i].get_cell(hauteur_colonne).get_value() == -1):
-                score_alignement += 1
-            elif (grille[coup_simule-i].get_cell(hauteur_colonne).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-
-def analyse_horizontal_droit(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and coup_simule + i <= 6 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule+i].get_cell(hauteur_colonne).get_value() == (lvl_ia+1)%2):
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:
-            if (grille[coup_simule+i].get_cell(hauteur_colonne).get_value() == -1):
-                score_alignement += 1
-            elif (grille[coup_simule+i].get_cell(hauteur_colonne).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-def analyse_vertical_bas(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and hauteur_colonne - i >= 0 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule].get_cell(hauteur_colonne-i).get_value() == (lvl_ia+1)%2):
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:
-            if (grille[coup_simule].get_cell(hauteur_colonne-i).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-def analyse_diag_gauche_bas(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and hauteur_colonne - i >= 0 and coup_simule -i >= 0 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule-i].get_cell(hauteur_colonne-i).get_value() == (lvl_ia+1)%2):
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:
-            if (grille[coup_simule-i].get_cell(hauteur_colonne-i).get_value() == -1):
-                score_alignement += 1
-            elif (grille[coup_simule-i].get_cell(hauteur_colonne-i).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-def analyse_diag_droit_bas(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and hauteur_colonne - i >= 0 and coup_simule +i <= 6 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule+i].get_cell(hauteur_colonne-i).get_value() == (lvl_ia+1)%2):
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:
-            if (grille[coup_simule+i].get_cell(hauteur_colonne-i).get_value() == -1):
-                score_alignement += 1
-            elif (grille[coup_simule+i].get_cell(hauteur_colonne-i).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-def analyse_diag_droit_haut(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and hauteur_colonne + i <= 5 and coup_simule + i <= 6 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule+i].get_cell(hauteur_colonne+i).get_value() == (lvl_ia+1)%2):
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:
-            if (grille[coup_simule+i].get_cell(hauteur_colonne+i).get_value() == -1):
-                score_alignement += 1
-            elif (grille[coup_simule+i].get_cell(hauteur_colonne+i).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-def analyse_diag_gauche_haut(grille, hauteur_colonne, coup_simule, est_defense):
-    i = 1
-    score_alignement = 0 # score permettant de vérifier alignement (ex: score > 100 = 2 jetons alignés)
-    non_bloque = True
-    while i < 4  and hauteur_colonne + i <= 5 and coup_simule - i >= 0 and non_bloque:
-        if est_defense:
-            if (grille[coup_simule-i].get_cell(hauteur_colonne+i).get_value() == (lvl_ia+1)%2): #lvl_ia permet d'alterner le "couleur" analysée en fonction de la profondeur du Min/Max
-                score_alignement = evaluation_defense(score_alignement)
-            else:
-                non_bloque = False
-        else:
-            if (grille[coup_simule-i].get_cell(hauteur_colonne+i).get_value() == -1):
-                score_alignement += 1
-            elif (grille[coup_simule-i].get_cell(hauteur_colonne+i).get_value() == lvl_ia%2):
-                score_alignement = evaluation_attaque(score_alignement)
-            else:
-                non_bloque = False
-        i+=1
-    return score_alignement
-
-def evaluation_attaque(score_actuel):
-    nouveau_score = score_actuel
-    if (nouveau_score > 100):
-        nouveau_score += 1000
-    elif (nouveau_score >= 10):
-        nouveau_score += 100
-    else:
-        nouveau_score += 10
-    return nouveau_score
-
-def evaluation_defense(score_actuel):
-    nouveau_score = score_actuel
-    if (nouveau_score < -100):
-        nouveau_score -= 1000
-    elif (nouveau_score <= -10):
-        nouveau_score -= 100
-    else:
-        nouveau_score -= 10
-    return nouveau_score
+    return e
 
 # Algo du Min/Max
-def choix_colonne(grille_actuelle):
+def choix_colonne(grille_actuelle, ordre_jeu):
     colonne_joue = 0 # colonne par défaut
-    score_prof_1 = -10000 if lvl_ia%2 == 1 else 10000 
+    score_prof_0 = -10000 if ordre_jeu == 0 else 10000
     for i in range(7):
         print("IA joue ", i)
         if lvl_ia >= 2:
-            score_prof_2 = -10000 if lvl_ia%2 == 0 else 10000 # Initialisation pour la première comparaison
+            score_prof_1 = -10000 if ordre_jeu == 1 else 10000
             for j in range(7):
-                print("joueur joue ", j)
-                if lvl_ia >= 3:
-                    score_prof_3 = -10000 if lvl_ia%2 == 1 else 10000 # Initialisation pour la première comparaison
-                    for k in range(7):
-                        print("IA joue ", k)
-                        if lvl_ia >= 4:
-                            score_prof_4 = -10000 if lvl_ia%2 == 0 else 10000 # Initialisation pour la première comparaison
-                            for l in range(7):
-                                # print("IA joue ", l)
-                                score = analyse_grille(grille_actuelle, [i,j,k,l])
-                                # print(" score = ", score)
-                        else:
-                            score_prof_4 = analyse_grille(grille_actuelle, [i,j,k])
-                            # print(" score = ", score)
-                        if lvl_ia%2 == 1:
-                            if score_prof_4 > score_prof_3:
-                                score_prof_3 = score_prof_4
-                        else:
-                            if score_prof_4 < score_prof_3:
-                                score_prof_3 = score_prof_4
-                else:
-                    score_prof_3 = analyse_grille(grille_actuelle, [i,j])
-                    # print(" score = ", score)
-                if lvl_ia%2 == 1:
-                    if score_prof_3 < score_prof_2:
-                            score_prof_2 = score_prof_3
-                else:
-                    if score_prof_3 > score_prof_2:
-                            score_prof_2 = score_prof_3
+                grille_calcul = copy.deepcopy(grille_actuelle) # Copy l'état de la grille sans copier sa référence
+
+                print("Joueur joue ", j)
+                try:
+                    grille_calcul.play_column(i)
+                    grille_calcul.play_column(j)
                     
+                    score_prof_2 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
+                    print(" score prof 2 = ", score_prof_2)
+                    if ordre_jeu == 1:
+                        if score_prof_2 > score_prof_1:
+                            score_prof_1 = score_prof_2
+                    else:
+                        if score_prof_2 < score_prof_1:
+                            score_prof_1 = score_prof_2
+                except:
+                    None
         else:
-            score_prof_2 = analyse_grille(grille_actuelle, [i])
-            # print(" score = ", score)
-        if lvl_ia%2 == 1:
-            if score_prof_2 > score_prof_1:
-                score_prof_1 = score_prof_2
+            grille_calcul = copy.deepcopy(grille_actuelle) # Copy l'état de la grille sans copier sa référence
+
+            try:
+                grille_calcul.play_column(i)
+                
+                score_prof_1 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
+            except:
+                None
+        print(" score prof 1 = ", score_prof_1)
+        if ordre_jeu == 0:
+            if score_prof_1 > score_prof_0:
+                score_prof_0 = score_prof_1
                 colonne_joue = i
         else:
-            if score_prof_2 < score_prof_1:
-                score_prof_1 = score_prof_2
+            if score_prof_1 < score_prof_0:
+                score_prof_0 = score_prof_1
                 colonne_joue = i
 
     return colonne_joue
 
+## TESTS 
 
+lvl_ia = 1
 
-########################################
-#                   TESTS
-########################################
+# grille_test = Grid()
+# grille_test.play_column(3)
+# grille_test.play_column(3)
+# grille_test.play_column(2)
+# grille_test.play_column(3)
+# grille_test.play_column(1)
+# grille_test.play_column(0)
 
-grilleTest = Grid()
-grilleTest.play_column(4)
-grilleTest.play_column(3)
-grilleTest.play_column(4)
-grilleTest.play_column(4)
-grilleTest.play_column(4)
-grilleTest.play_column(3)
-grilleTest.play_column(4)
-grilleTest.play_column(5)
-grilleTest.play_column(4)
-
-#   |   |   | 0 |   |   |   |
-#   |   |   | 0 |   |   |   |
-#   |   |   | 0 |   |   |   |
-#   |   |   | 1 |   |   |   |
-#   |   | 1 | 0 |   |   |   |
-#   |   | 1 | 0 | 1 |   |   |
-# 0   1   2   3   4   5   6 
-
-print(choix_colonne(grilleTest))
-
-# grilleTest.play_column(0)
-# grilleTest.play_column(2)
-# grilleTest.play_column(1)
-# grilleTest.play_column(2)
-# grilleTest.play_column(0)
-# grilleTest.play_column(1)
-# grilleTest.play_column(3)
-# grilleTest.play_column(3)
-# grilleTest.play_column(5)
-# grilleTest.play_column(0)
-# grilleTest.play_column(6)
-
-# Grille actuelle
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-# 1 |   |   |   |   |   |   |
-# 0 | 1 | 1 | 1 |   |   |   |
-# 0 | 0 | 1 | 0 |   | 0 | 0 |
-# 0   1   2   3   4   5   6 
-
-# grilleTest.play_column(2)
-# grilleTest.play_column(1)
-# grilleTest.play_column(2)
-# grilleTest.play_column(1)
-# grilleTest.play_column(4)
-# grilleTest.play_column(5)
-# grilleTest.play_column(4)
-# grilleTest.play_column(2)
-# grilleTest.play_column(5)
-
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-#   |   | 1 |   |   |   |   |
-#   | 1 | 0 |   | 0 | 0 |   |
-#   | 1 | 0 |   | 0 | 1 |   |
-# 0   1   2   3   4   5   6 
-
-# 1 jeton 0 = +2 
-# 2 jetons 0 = +20
-# 3 jetons 0 = +200
-# col 0: 9
-# col 1: 9
-# col 2: 9
-# col 3: 11
-# col 4: 10
-# col 5: 8
-# col 6: 6
-
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-#   |   |   |   |   |   |   |
-# 0 |   |   | 1 |   |   |   |
-# 0   1   2   3   4   5   6 
-
-# 1 jeton 0 = +2 
-# 2 jetons 0 = +20
-# 3 jetons 0 = +200
-# col 0: 9
-# col 1: 18
-# col 2: 18
-# col 3: 24
-# col 4: 19
-# col 5: 17
-# col 6: 15
-
-
-
-# print("colonne 0 : " , analyse_grille(grilleTest.get_hashcode(),[0]))
-# print("colonne 1 : " , analyse_grille(grilleTest.get_hashcode(),[1]))
-# print("colonne 2 : " , analyse_grille(grilleTest.get_hashcode(),[2]))
-# print("colonne 3 : " , analyse_grille(grilleTest.get_hashcode(),[3]))
-# print("colonne 4 : " , analyse_grille(grilleTest.get_hashcode(),[4]))
-# print("colonne 5 : " , analyse_grille(grilleTest.get_hashcode(),[5]))
-# print("colonne 6 : " , analyse_grille(grilleTest.get_hashcode(),[6]))
-# print(choix_colonne(grilleTest))
-
-# TEST FINAL
-# print("colonne 0 : " , analyse_grille(grilleTest.get_hashcode(),0) == -582 , " " , analyse_grille(grilleTest.get_hashcode(),0))
-# print("colonne 1 : " , analyse_grille(grilleTest.get_hashcode(),1) == -650 , " " , analyse_grille(grilleTest.get_hashcode(),1))
-# print("colonne 2 : " , analyse_grille(grilleTest.get_hashcode(),2) == -518 , " " , analyse_grille(grilleTest.get_hashcode(),2))
-# print("colonne 3 : " , analyse_grille(grilleTest.get_hashcode(),3) == -517 , " " ,analyse_grille(grilleTest.get_hashcode(),3))
-# print("colonne 4 : " , analyse_grille(grilleTest.get_hashcode(),4) == -673, " " , analyse_grille(grilleTest.get_hashcode(),4))
-# print("colonne 5 : " , analyse_grille(grilleTest.get_hashcode(),5) == -678 , " " , analyse_grille(grilleTest.get_hashcode(),5))
-# print("colonne 6 : " , analyse_grille(grilleTest.get_hashcode(),6) == -142 , " " , analyse_grille(grilleTest.get_hashcode(),6))
-# print(choix_colonne(grilleTest.get_hashcode()))
-
-# TEST TOTAL ATTAQUE
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 1 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 3 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 12 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 119 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 20, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 26 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 1110 , " " , analyse_grille(grilleTest,6))
-# print("Colonne joué : ", choix_colonne(grilleTest))
-
-# TEST HORIZONTAL VERTICAL DIAGONAL BAS
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 2 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 17 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 126 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 36, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 121 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 121 , " " , analyse_grille(grilleTest,6))
-
-# TEST DIAGONALE DROITE BAS
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 0 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 10 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 10 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 11, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 10 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 0 , " " , analyse_grille(grilleTest,6))
-
-# TEST DIAGONALE GAUCHE BAS
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 1 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 2 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 0 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 10, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 0 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 0 , " " , analyse_grille(grilleTest,6))
-
-# TEST HORIZONTAL GAUCHE
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 1 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 2 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 3 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 3, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 110 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 111 , " " , analyse_grille(grilleTest,6))
-
-# TEST HORIZONTAL DROIT
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 0 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 3 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 3 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 2, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 1 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 0 , " " , analyse_grille(grilleTest,6))
-
-# TEST HORIZONTAL
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 1 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 5 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 6 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 5, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 111 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 111 , " " , analyse_grille(grilleTest,6))
-
-# TEST VERTICAL BAS
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 0 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 0 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 110 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 10, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 0 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 10 , " " , analyse_grille(grilleTest,6))
-
-# TEST HORIZONTAL VERTICAL BAS
-# print("colonne 0 : " , analyse_grille(grilleTest,0) == 0 , " " , analyse_grille(grilleTest,0))
-# print("colonne 1 : " , analyse_grille(grilleTest,1) == 1 , " " , analyse_grille(grilleTest,1))
-# print("colonne 2 : " , analyse_grille(grilleTest,2) == 5 , " " , analyse_grille(grilleTest,2))
-# print("colonne 3 : " , analyse_grille(grilleTest,3) == 116 , " " ,analyse_grille(grilleTest,3))
-# print("colonne 4 : " , analyse_grille(grilleTest,4) == 15, " " , analyse_grille(grilleTest,4))
-# print("colonne 5 : " , analyse_grille(grilleTest,5) == 111 , " " , analyse_grille(grilleTest,5))
-# print("colonne 6 : " , analyse_grille(grilleTest,6) == 121 , " " , analyse_grille(grilleTest,6))
+# print(choix_colonne(grille_test,0))
