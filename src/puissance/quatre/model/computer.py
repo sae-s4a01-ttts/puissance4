@@ -304,6 +304,80 @@ def eval_victory(grid) -> bool:
             if victory: break
         
         return victory
+    
+    def eval_positive_diagonal_victory(grid) -> bool:
+
+        victory = False
+
+        origin_height = 2
+        origin_width  = 0
+
+        range_sequence = [4, 5, 6, 6, 5, 4]
+        irange = 0
+
+        for dgl in range(0, 6):
+            ones_sequence = 0
+            colsbin = grid[origin_width : range_sequence[irange] + origin_width]
+            
+            next_height = origin_height
+            for colbin in colsbin:
+                colbin = colbin[::-1]
+                if len(colbin) > next_height:
+                    if colbin[next_height] == '1': ones_sequence += 1
+                    else: ones_sequence = 0
+                else: ones_sequence = 0
+                if ones_sequence > 3:
+                    victory = True
+                    break
+
+                next_height += 1
+
+            if victory: break
+
+            origin_width  += 1 if origin_height < 1 else 0
+            origin_height -= 1 if origin_height > 0 else 0
+            irange += 1
+
+        return victory
+    
+    def eval_negative_diagonal_victory(grid) -> bool:
+
+        victory = False
+
+        origin_height = 2
+        origin_width  = 6
+
+        range_sequence = [4, 5, 6, 6, 5, 4]
+        irange = 0
+
+        for dgl in range(5, -1, -1):
+            ones_sequence = 0
+            colsbin = grid[origin_width - range_sequence[irange] + 1 : origin_width + 1][::-1]
+            
+            next_height = origin_height
+            for colbin in colsbin:
+                colbin = colbin[::-1]
+
+                if len(colbin) > next_height:
+
+
+                    if colbin[next_height] == '1': ones_sequence += 1
+                    else: ones_sequence = 0
+
+                else: ones_sequence = 0
+                if ones_sequence > 3:
+                    victory = True
+                    break
+
+                next_height += 1
+
+            if victory: break
+
+            origin_width  -= 1 if origin_height < 1 else 0
+            origin_height -= 1 if origin_height > 0 else 0
+            irange += 1
+
+        return victory
                 
     
     global_victory = False
@@ -312,9 +386,9 @@ def eval_victory(grid) -> bool:
 
     global_victory = eval_horizontal_victory(grid) if not global_victory else global_victory
 
-    # global_victory = eval_positive_diagonal_victory(grid) if not global_victory else global_victory
+    global_victory = eval_positive_diagonal_victory(grid) if not global_victory else global_victory
 
-    # global_victory = eval_negative_diagonal_victory(grid) if not global_victory else global_victory
+    global_victory = eval_negative_diagonal_victory(grid) if not global_victory else global_victory
 
     return global_victory
 
@@ -343,11 +417,11 @@ def separate_string(input_str):
 
 # Exemple d'utilisation de la fonction
 # input_string = "001011011013011000000"
-input_string = "001011011013000011000"
+# input_string = "001011011013000011000"
 
-c = separate_string(input_string)
-c = [coldec_to_colbin(col) for col in c]
-c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
+# c = separate_string(input_string)
+# c = [coldec_to_colbin(col) for col in c]
+# c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
 
 def X_eval(c):
     c_eval = [0, 0, 0, 0, 0, 0, 0]
@@ -414,12 +488,13 @@ def traduction_grille(grille):
 # Simule la liste des coups pour annalyser les grilles générer et donner un score à chaque grille
 def fonction_evaluation(grille_actuelle):
     c = separate_string(grille_actuelle)
+    c = [coldec_to_colbin(col) for col in c]
     c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
 
     eX = X_eval(c)
     eO = O_eval(c)
 
-    e = sum(eX) - sum(eO)
+    e = eX - eO
 
     return e
 
@@ -458,7 +533,6 @@ def choix_colonne(grille_actuelle, ordre_jeu):
                 score_prof_1 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
             except:
                 None
-        print(" score prof 1 = ", score_prof_1)
         if ordre_jeu == 0:
             if score_prof_1 > score_prof_0:
                 score_prof_0 = score_prof_1
