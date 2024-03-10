@@ -487,7 +487,7 @@ def traduction_grille(grille):
 
 # Simule la liste des coups pour annalyser les grilles générer et donner un score à chaque grille
 def fonction_evaluation(grille_actuelle):
-    c = separate_string(grille_actuelle)
+    c = separate_string(traduction_grille(grille_actuelle))
     c = [coldec_to_colbin(col) for col in c]
     c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
 
@@ -498,62 +498,53 @@ def fonction_evaluation(grille_actuelle):
 
     return e
 
+# Appelle le l'algo du min max et retourne la colonne au meilleure score
+# def choix_colonne(grille_actuelle, ordre_jeu): 
+
+#     minimax(grille, depth, maximizing_player)
+
+#     return colonne_joue
+
 # Algo du Min/Max
-def choix_colonne(grille_actuelle, ordre_jeu):
-    colonne_joue = 0 # colonne par défaut
-    score_prof_0 = -10000 if ordre_jeu == 0 else 10000
-    for i in range(7):
-        print("IA joue ", i)
-        if lvl_ia >= 2:
-            score_prof_1 = -10000 if ordre_jeu == 1 else 10000
-            for j in range(7):
-                grille_calcul = copy.deepcopy(grille_actuelle) # Copy l'état de la grille sans copier sa référence
+def minimax(grille, depth, maximizing_player):
 
-                print("Joueur joue ", j)
-                try:
-                    grille_calcul.play_column(i)
-                    grille_calcul.play_column(j)
-                    
-                    score_prof_2 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
-                    print(" score prof 2 = ", score_prof_2)
-                    if ordre_jeu == 1:
-                        if score_prof_2 > score_prof_1:
-                            score_prof_1 = score_prof_2
-                    else:
-                        if score_prof_2 < score_prof_1:
-                            score_prof_1 = score_prof_2
-                except:
-                    None
-        else:
-            grille_calcul = copy.deepcopy(grille_actuelle) # Copy l'état de la grille sans copier sa référence
+    if depth == 0 :
+        return (None, fonction_evaluation(grille.get_hashcode()))
 
-            try:
-                grille_calcul.play_column(i)
-                
-                score_prof_1 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
-            except:
-                None
-        if ordre_jeu == 0:
-            if score_prof_1 > score_prof_0:
-                score_prof_0 = score_prof_1
-                colonne_joue = i
-        else:
-            if score_prof_1 < score_prof_0:
-                score_prof_0 = score_prof_1
-                colonne_joue = i
+    if maximizing_player:
+        value = -100000000
+        column = 0
+        for i in range(7):
+            grille_calcul = copy.deepcopy(grille)
+            grille_calcul.play_column(i)
+            new_score = minimax(grille_calcul, depth - 1, False)[1]
+            if new_score > value:
+                value = new_score
+                column = i
+        return column, value
 
-    return colonne_joue
+    else:  # Minimizing player
+        value = 1000000000
+        column = 0
+        for i in range(7):
+            grille_calcul = copy.deepcopy(grille)
+            grille_calcul.play_column(i)
+            new_score = minimax(grille_calcul, depth - 1, True)[1]
+            if new_score < value:
+                value = new_score
+                column = i
+        return column, value
 
 ## TESTS 
 
 lvl_ia = 1
 
-# grille_test = Grid()
-# grille_test.play_column(3)
-# grille_test.play_column(3)
-# grille_test.play_column(2)
-# grille_test.play_column(3)
-# grille_test.play_column(1)
-# grille_test.play_column(0)
+grille_test = Grid()
+grille_test.play_column(3)
+grille_test.play_column(3)
+grille_test.play_column(2)
+grille_test.play_column(3)
+grille_test.play_column(1)
+grille_test.play_column(0)
 
-# print(choix_colonne(grille_test,0))
+print(minimax(grille_test,3,False))
