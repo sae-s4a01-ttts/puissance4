@@ -98,9 +98,10 @@ class Grid:
     
     def play_column(self, index:int) -> bool:
         if not (index > -1 and index < 7): return False
-        self.__grid[index].play_cell(self.__next_player)
-        self.__next_player = (self.__next_player + 1) % 2
-        self.__generate_hashcode()
+        if self.__grid[index].can_play():
+            self.__grid[index].play_cell(self.__next_player)
+            self.__next_player = (self.__next_player + 1) % 2
+            self.__generate_hashcode()
         return self.maybe_its_win(index)
     
     def set_grid(self, add_columns) -> bool:

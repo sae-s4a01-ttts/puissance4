@@ -1,7 +1,7 @@
 from grid import Grid
 from player import Player
 from random import randint
-import computer
+from computer import Computer
 
 class Game:
     
@@ -30,7 +30,14 @@ class Game:
     def __solo_game(self) -> None:
         new_player:Player = self.__define_new_player()
         self.__players[0] = new_player
-        self.__players[1] = Player("IA")
+        lvl_ia = 0
+        while lvl_ia <= 0:
+            saisie_joueur = input("Choisissez le niveau de l'IA : ")
+            if saisie_joueur.isdigit():
+                lvl_ia:int = int(saisie_joueur) 
+            if lvl_ia <= 0:
+                print('Veuillez choisir un niveau supérieur à 0')
+        self.__players[1] = Computer(lvl_ia)
          
     def __define_new_player(self) -> Player:
         player_name = ""
@@ -64,7 +71,7 @@ class Game:
 
     def __play_ia(self, ordre_jeu) -> int:
         # Placement aléatoire de l'ordinateur
-        if self.__grid.play_column(computer.choix_colonne(self.__grid, ordre_jeu)): return 1
+        if self.__grid.play_column(self.__players[1].choix_colonne(self.__grid, ordre_jeu)): return 1
     
         
     def __display_grid(self) -> None:
