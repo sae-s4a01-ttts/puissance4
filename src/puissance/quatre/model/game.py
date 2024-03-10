@@ -59,6 +59,9 @@ class Game:
                 play_placement:int = int(saisie_joueur)
             if play_placement < 1 or play_placement > 7:
                 print("Veuillez rentrer un nombre entre 1 et 7")
+            if not self.__grid.can_play_column(play_placement - 1):
+                print("Veuillez rentrer une colonne non pleine")
+                play_placement = 0
             
         if self.__grid.play_column(play_placement - 1): return 0
 

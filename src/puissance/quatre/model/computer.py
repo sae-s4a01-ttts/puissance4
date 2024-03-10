@@ -499,11 +499,11 @@ def fonction_evaluation(grille_actuelle):
     return e
 
 # Appelle le l'algo du min max et retourne la colonne au meilleure score
-# def choix_colonne(grille_actuelle, ordre_jeu): 
+def choix_colonne(grille_actuelle, ordre_jeu): 
 
-#     minimax(grille, depth, maximizing_player)
+    colonne_joue = minimax(grille_actuelle, lvl_ia, ordre_jeu == 0)[0]
 
-#     return colonne_joue
+    return colonne_joue
 
 # Algo du Min/Max
 def minimax(grille, depth, maximizing_player):
@@ -516,11 +516,12 @@ def minimax(grille, depth, maximizing_player):
         column = 0
         for i in range(7):
             grille_calcul = copy.deepcopy(grille)
-            grille_calcul.play_column(i)
-            new_score = minimax(grille_calcul, depth - 1, False)[1]
-            if new_score > value:
-                value = new_score
-                column = i
+            if grille_calcul.can_play_column(i):
+                grille_calcul.play_column(i)
+                new_score = minimax(grille_calcul, depth - 1, False)[1]
+                if new_score > value:
+                    value = new_score
+                    column = i
         return column, value
 
     else:  # Minimizing player
@@ -528,23 +529,24 @@ def minimax(grille, depth, maximizing_player):
         column = 0
         for i in range(7):
             grille_calcul = copy.deepcopy(grille)
-            grille_calcul.play_column(i)
-            new_score = minimax(grille_calcul, depth - 1, True)[1]
-            if new_score < value:
-                value = new_score
-                column = i
+            if grille_calcul.can_play_column(i):
+                grille_calcul.play_column(i)
+                new_score = minimax(grille_calcul, depth - 1, True)[1]
+                if new_score < value:
+                    value = new_score
+                    column = i
         return column, value
 
 ## TESTS 
 
-lvl_ia = 1
+lvl_ia = 4
 
-grille_test = Grid()
-grille_test.play_column(3)
-grille_test.play_column(3)
-grille_test.play_column(2)
-grille_test.play_column(3)
-grille_test.play_column(1)
-grille_test.play_column(0)
+# grille_test = Grid()
+# grille_test.play_column(3)
+# grille_test.play_column(3)
+# grille_test.play_column(2)
+# grille_test.play_column(3)
+# grille_test.play_column(1)
+# grille_test.play_column(0)
 
-print(minimax(grille_test,3,False))
+# print(minimax(grille_test,3,False))
