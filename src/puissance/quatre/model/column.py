@@ -34,13 +34,12 @@ class Column:
         return True
     
     def play_cell(self, player:int) -> bool:
-        if not self.__can_play(): raise ValueError("")
         self.__column[self.__next_cell].set_value(player)
         self.__next_cell += 1
         self.__generate_hashcode()
         return True
         
-    def __can_play(self) -> bool:
+    def can_play(self) -> bool:
         return self.__next_cell < self.__HEIGHT
     
     def get_column(self) -> list[Cell]:

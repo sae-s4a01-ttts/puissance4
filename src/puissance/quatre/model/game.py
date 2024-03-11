@@ -59,12 +59,17 @@ class Game:
                 play_placement:int = int(saisie_joueur)
             if play_placement < 1 or play_placement > 7:
                 print("Veuillez rentrer un nombre entre 1 et 7")
+            if not self.__grid.can_play_column(play_placement - 1):
+                print("Veuillez rentrer une colonne non pleine")
+                play_placement = 0
             
         if self.__grid.play_column(play_placement - 1): return 0
 
     def __play_ia(self, ordre_jeu) -> int:
         # Placement aléatoire de l'ordinateur
-        if self.__grid.play_column(computer.choix_colonne(self.__grid, ordre_jeu)): return 1
+        play_ia = computer.choix_colonne(self.__grid, ordre_jeu)
+        print("L'iA a joué en : " + str(play_ia + 1))
+        if self.__grid.play_column(play_ia): return 1
     
         
     def __display_grid(self) -> None:

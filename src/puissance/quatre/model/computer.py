@@ -271,7 +271,7 @@ def eval_victory(grid) -> bool:
 
     def eval_vertical_victory(grid) -> bool:
         
-        victory = False
+        victory = 0
 
         for col in grid:
             if len(col) > 3:
@@ -280,15 +280,15 @@ def eval_victory(grid) -> bool:
                     if cel == '1': ones_sequence += 1
                     else: ones_sequence = 0
                     if ones_sequence > 3:
-                        victory = True
+                        victory += 1
                         break
-            if victory: break
+            # if victory: break
 
         return victory
     
     def eval_horizontal_victory(grid) -> bool:
 
-        victory = False
+        victory = 0
 
         for line in range(0, len(grid)):
             ones_sequence = 0
@@ -299,15 +299,15 @@ def eval_victory(grid) -> bool:
                     else: ones_sequence = 0
                 else: ones_sequence = 0
                 if ones_sequence > 3:
-                    victory = True
+                    victory += 1
                     break
-            if victory: break
+            # if victory: break
         
         return victory
     
     def eval_positive_diagonal_victory(grid) -> bool:
 
-        victory = False
+        victory = 0
 
         origin_height = 2
         origin_width  = 0
@@ -327,12 +327,12 @@ def eval_victory(grid) -> bool:
                     else: ones_sequence = 0
                 else: ones_sequence = 0
                 if ones_sequence > 3:
-                    victory = True
+                    victory += 1
                     break
 
                 next_height += 1
 
-            if victory: break
+            # if victory: break
 
             origin_width  += 1 if origin_height < 1 else 0
             origin_height -= 1 if origin_height > 0 else 0
@@ -342,7 +342,7 @@ def eval_victory(grid) -> bool:
     
     def eval_negative_diagonal_victory(grid) -> bool:
 
-        victory = False
+        victory = 0
 
         origin_height = 2
         origin_width  = 6
@@ -366,12 +366,12 @@ def eval_victory(grid) -> bool:
 
                 else: ones_sequence = 0
                 if ones_sequence > 3:
-                    victory = True
+                    victory += 1
                     break
 
                 next_height += 1
 
-            if victory: break
+            # if victory: break
 
             origin_width  -= 1 if origin_height < 1 else 0
             origin_height -= 1 if origin_height > 0 else 0
@@ -380,15 +380,15 @@ def eval_victory(grid) -> bool:
         return victory
                 
     
-    global_victory = False
+    global_victory = 0
 
-    global_victory = eval_vertical_victory(grid)
+    global_victory += eval_vertical_victory(grid)
 
-    global_victory = eval_horizontal_victory(grid) if not global_victory else global_victory
+    global_victory += eval_horizontal_victory(grid) 
 
-    global_victory = eval_positive_diagonal_victory(grid) if not global_victory else global_victory
+    global_victory += eval_positive_diagonal_victory(grid) 
 
-    global_victory = eval_negative_diagonal_victory(grid) if not global_victory else global_victory
+    global_victory += eval_negative_diagonal_victory(grid)
 
     return global_victory
 
@@ -417,7 +417,7 @@ def separate_string(input_str):
 
 # Exemple d'utilisation de la fonction
 # input_string = "001011011013011000000"
-# input_string = "001011011013000011000"
+# input_string = "000001023296094074002"
 
 # c = separate_string(input_string)
 # c = [coldec_to_colbin(col) for col in c]
@@ -435,7 +435,8 @@ def X_eval(c):
 
     Xe = sum(c_eval)
 
-    Xe += 10000.00 if eval_victory(grid) else 0
+    Xe = 10000.00 * eval_victory(grid) + Xe
+
     return Xe
 
 def O_eval(c):
@@ -452,8 +453,11 @@ def O_eval(c):
 
     Oe = sum(c_eval)
 
-    Oe += 10000.00 if eval_victory(grid) else 0
+    Oe = 10000.00 * eval_victory(grid) + Oe
+
     return Oe
+
+# print(X_eval(c) - O_eval(c))
 
 def separate_string(input_str):
     # Initialisation du tableau pour stocker les morceaux
@@ -487,7 +491,7 @@ def traduction_grille(grille):
 
 # Simule la liste des coups pour annalyser les grilles générer et donner un score à chaque grille
 def fonction_evaluation(grille_actuelle):
-    c = separate_string(grille_actuelle)
+    c = separate_string(traduction_grille(grille_actuelle))
     c = [coldec_to_colbin(col) for col in c]
     c = [[c[0:4], 0], [c[0:5], 1], [c[0:6], 2], [c[0:7], 3], [c[1:7], 3], [c[2:7], 3], [c[3:7], 3]]
 
@@ -498,55 +502,70 @@ def fonction_evaluation(grille_actuelle):
 
     return e
 
+def test_victoire(grille_actuelle):
+    c = separate_string(traduction_grille(grille_actuelle))
+
+    c1 = [coldec_to_colbin(col) for col in c]
+
+    return [eval_victory(c), eval_victory(c1) * -1]
+
+
+
+# Appelle le l'algo du min max et retourne la colonne au meilleure score
+def choix_colonne(grille_actuelle, ordre_jeu): 
+
+    colonne_joue = minimax(grille_actuelle, lvl_ia, ordre_jeu == 0)
+    print("value colonne : " + str(colonne_joue[1]))
+
+    return colonne_joue[0]
+
 # Algo du Min/Max
-def choix_colonne(grille_actuelle, ordre_jeu):
-    colonne_joue = 0 # colonne par défaut
-    score_prof_0 = -10000 if ordre_jeu == 0 else 10000
-    for i in range(7):
-        print("IA joue ", i)
-        if lvl_ia >= 2:
-            score_prof_1 = -10000 if ordre_jeu == 1 else 10000
-            for j in range(7):
-                grille_calcul = copy.deepcopy(grille_actuelle) # Copy l'état de la grille sans copier sa référence
+def minimax(grille, depth, maximizing_player):
 
-                print("Joueur joue ", j)
-                try:
-                    grille_calcul.play_column(i)
-                    grille_calcul.play_column(j)
-                    
-                    score_prof_2 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
-                    print(" score prof 2 = ", score_prof_2)
-                    if ordre_jeu == 1:
-                        if score_prof_2 > score_prof_1:
-                            score_prof_1 = score_prof_2
-                    else:
-                        if score_prof_2 < score_prof_1:
-                            score_prof_1 = score_prof_2
-                except:
-                    None
-        else:
-            grille_calcul = copy.deepcopy(grille_actuelle) # Copy l'état de la grille sans copier sa référence
+    t = test_victoire(grille.get_hashcode())
 
-            try:
+    # if t[0] > 0 and not maximizing_player:
+    #     o = t[0] * 10000.00 + depth + fonction_evaluation(grille.get_hashcode())
+    #     print("not max : " + str(o))
+    #     return (None, o)
+
+    # if t[1] < 0 and maximizing_player:
+    #     p = t[1] * 10000.00 - depth + fonction_evaluation(grille.get_hashcode())
+    #     print("max : " + str(p))
+    #     return (None, p)
+
+    if depth == 0 or t[0] > 0 or t[1] < 0:
+        return (None, fonction_evaluation(grille.get_hashcode()))
+
+    if maximizing_player:
+        value = -100000000
+        column = 0
+        for i in range(7):
+            grille_calcul = copy.deepcopy(grille)
+            if grille_calcul.can_play_column(i):
                 grille_calcul.play_column(i)
-                
-                score_prof_1 = fonction_evaluation(traduction_grille(grille_calcul.get_hashcode()))
-            except:
-                None
-        if ordre_jeu == 0:
-            if score_prof_1 > score_prof_0:
-                score_prof_0 = score_prof_1
-                colonne_joue = i
-        else:
-            if score_prof_1 < score_prof_0:
-                score_prof_0 = score_prof_1
-                colonne_joue = i
+                new_score = minimax(grille_calcul, depth - 1, False)[1]
+                if new_score > value:
+                    value = new_score
+                    column = i
+        return column, value
 
-    return colonne_joue
+    else:
+        value = 1000000000
+        column = 0
+        for i in range(7):
+            grille_calcul = copy.deepcopy(grille)
+            if grille_calcul.can_play_column(i):
+                grille_calcul.play_column(i)
+                new_score = minimax(grille_calcul, depth - 1, True)[1]
+                if new_score < value:
+                    value = new_score
+                    column = i
+        return column, value
 
 ## TESTS 
 
-lvl_ia = 1
+lvl_ia = 3
 
 # grille_test = Grid()
 # grille_test.play_column(3)
@@ -556,4 +575,4 @@ lvl_ia = 1
 # grille_test.play_column(1)
 # grille_test.play_column(0)
 
-# print(choix_colonne(grille_test,0))
+# print(minimax(grille_test,3,False)) 3 4  3 5 5 4 2 7 7 6
