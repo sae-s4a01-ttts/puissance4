@@ -122,6 +122,10 @@ class Grid:
     def get_hashcode(self) -> hex:
         return self.__hashcode
     
+    def read_column_hashcode(self) -> list[str]:
+        hashcode_columns:list[str] = [col.get_hashcode() for col in self.__grid]
+        return hashcode_columns
+    
     def __str__(self) -> str:
         display_grid:str = ""
         row_in_grid:str = ""
@@ -135,9 +139,3 @@ class Grid:
         display_grid += "  1   2   3   4   5   6   7"
         
         return display_grid
-    
-
-# g = Grid()
-# g.play_column(5)
-
-# print(g.get_hashcode())
