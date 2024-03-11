@@ -103,6 +103,12 @@ class Grid:
             self.__next_player = (self.__next_player + 1) % 2
             self.__generate_hashcode()
         return self.maybe_its_win(index)
+    
+    def draw(self) -> bool:
+        draw:bool = True
+        for col in self.__grid:
+            if col.get_next_cell() < 6: draw = False
+        return draw
 
     def can_play_column(self, index:int) -> bool:
         if not (index > -1 and index < 7): return False

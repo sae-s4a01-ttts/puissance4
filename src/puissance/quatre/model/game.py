@@ -33,11 +33,14 @@ class Game:
                 print("Vous jouez les pions O")
 
         while self.__in_game:
-            joueur_gagnant = self.__play_mode_solo(player_order) if game_mode == 1 else self.__play_mode_ia(player_order)
+            joueur_gagnant = self.__play_mode_solo(player_order) if game_mode == 1 else self.__play_mode_ia()
             if not joueur_gagnant == None: self.__in_game = False
         
         self.__display_grid()
-        print("Victoire de ", self.__players[joueur_gagnant].get_name())
+        if joueur_gagnant != -1:
+            print("Victoire de ", self.__players[joueur_gagnant].get_name())
+        else:
+            print("Égalité")
        
     def __select_game_mode(self) -> None:
         game_mode = 1
@@ -89,17 +92,16 @@ class Game:
         if ordre_jeu == 0:
             if self.__play_joueur() == 0: return 0
             if self.__play_ia(self.__players[1], ordre_jeu) == 1: return 1
+            if self.__grid.draw(): return -1 
         else:
             if self.__play_ia(self.__players[1], ordre_jeu) == 1: return 1
             if self.__play_joueur() == 0: return 0
+            if self.__grid.draw(): return -1 
 
-    def __play_mode_ia(self, ordre_jeu) -> int:
-        if ordre_jeu == 0:
-            if self.__play_ia(self.__players[0], 1) == 0: return 0
-            if self.__play_ia(self.__players[1], 0) == 1: return 1
-        else:
-            if self.__play_ia(self.__players[1], 0) == 1: return 1
-            if self.__play_ia(self.__players[0], 1) == 0: return 0
+    def __play_mode_ia(self) -> int:
+        if self.__play_ia(self.__players[0], 1) == 1: return 0
+        if self.__play_ia(self.__players[1], 0) == 1: return 1
+        if self.__grid.draw(): return -1 
 
     def __play_joueur(self) -> int:
         self.__display_grid()
