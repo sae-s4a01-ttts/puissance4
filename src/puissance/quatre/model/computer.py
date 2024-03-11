@@ -535,7 +535,7 @@ def minimax(grille, depth, maximizing_player):
     #     return (None, p)
 
     if depth == 0 or t[0] > 0 or t[1] < 0:
-        return (None, fonction_evaluation(grille.get_hashcode()))
+        return (None, fonction_evaluation(grille.get_hashcode()) + ((t[0] + t[1]) * 10000))
 
     if maximizing_player:
         value = -100000000
@@ -565,7 +565,7 @@ def minimax(grille, depth, maximizing_player):
 
 ## TESTS 
 
-lvl_ia = 3
+lvl_ia = 5
 
 # grille_test = Grid()
 # grille_test.play_column(3)
