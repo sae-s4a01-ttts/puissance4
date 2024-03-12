@@ -4,39 +4,96 @@ from grid import Grid
 from player import Player
 
 class Computer(Player):
+    """Classe qui crée un ordinateur pouvant jouer au puissance
+    4 en ayant la connaissance de la grille. Elle hérite de 
+    Player.
+    """
 
+    # Niveau de profondeur de l'ordinateur
     __level:int
 
     @staticmethod
     def parse_coldec(coldec:str) -> tuple:
-        prefix_coldec = int(coldec[:2])
-        suffix_coldec = int(coldec[-1])
+        """Fonction qui permet à partir d'un hashcode d'une colone 
+        de connaitre la présence des pions et leur emplacement et
+        la hauteur de la colonne
+
+        Args:
+            coldec (str): hashcode décimal d'une colonne
+
+        Returns:
+            tuple: constitué du code décimal de la colonne et de sa hauteur
+        """
+        # Récupération du code décimal de la colonne
+        prefix_coldec:int = int(coldec[:2])
+        # Récupération de la hauteur de la colonne
+        suffix_coldec:int = int(coldec[-1])
 
         return (prefix_coldec, suffix_coldec)
 
     @staticmethod
     def coldec_to_colbin(coldec:str) -> bin:
+        """Fonction qui permet de traduire une colonne avec un
+        hashcode décimal en une séquence binaire
+
+        Args:
+            coldec (str): hashcode décimal d'une colonne
+
+        Returns:
+            bin: séquence binaire de la colonne
+        """
+        # Découpage de la partie décimal et de la hauteur du
+        # hashcode de la colonne
         (prefix_coldec, suffix_coldec) = Computer.parse_coldec(coldec)
 
+        # Cas de colonne vide, alors on renvoie un code binaire
+        # vide
         if (prefix_coldec, suffix_coldec) == (0, 0) : return ''
 
+        # Codage en binaire de la colonne
         prefix_colbin:bin   = bin(prefix_coldec)[2:]
+        # Longueur de la séquence binaire
         suffix_colbin:int   = len(prefix_colbin)
+        
+        # Différence entre la hauteur de la colonne et la 
+        # taille de la séquence binaire pour combler le manque
+        # de la hauteur avec des '0'
         zero_complement:int = suffix_coldec - suffix_colbin
-
         colbin:bin = zero_complement * '0' + prefix_colbin
 
         return colbin
 
     @staticmethod
     def colbin_to_coldec(colbin:bin) -> str:
+        """Fonction qui permet de traduire une colonne avec une
+        séquence binaire en un hashcode décimal
+
+        Args:
+            colbin (bin): séquence binaire représentant la colonne
+
+        Returns:
+            str: hashcode décimal de la colonne
+        """
+        # Traduction de la séquence binaire en un hashcode décimal
         coldec:str = str(int(colbin, 2)).zfill(2) + str(len(colbin)) if colbin != "" else "000"
         return coldec
 
     @staticmethod
     def binary_complement(colbin:bin) -> bin:
+        """Fonction qui permet de faire le complément à un d'une
+        séquence binaire
+
+        Args:
+            colbin (bin): séquence binaire d'une colonne
+
+        Returns:
+            bin: complément à un de la colonne renseignée
+        """
+        # Chaine contenant la séquence binaire complémentaire
         colbin_complement:bin = ''
 
+        # Boucle sur la séquence binaire pour en traduire sa
+        # complémentarité
         for bit in colbin:
             if bit == '0': colbin_complement += '1'
             elif bit == '1': colbin_complement += '0'
@@ -45,8 +102,20 @@ class Computer(Player):
 
     @staticmethod
     def consecutive_vertical_ones(colbin:bin) -> int:
+        """Fonction qui permet de compter le nombre de 1 qui
+        sont conséqutifs dans une colonne
+
+        Args:
+            colbin (bin): séquence binaire d'une colonne
+
+        Returns:
+            int: nombre de 1 qui sont consécutifs
+        """
+        # Conteur de la séquence de 1 consécutifs
         ones_sequence: int = 0
 
+        # Boucle sur la séquence binaire tant que le pion
+        # à une valeur de 1
         for bit in colbin:
             if bit == '1': ones_sequence += 1
             else: return ones_sequence
@@ -55,76 +124,143 @@ class Computer(Player):
 
     @staticmethod
     def eval_vertical_score(colsbin:list[bin], column:int) -> int:
-        """
-        Fonction qui permet de calculer le score vertical d'une fonction.
-        @params colsbin est une liste de hashcode de colonne
-        @params column est la colonne de colsbin dont on veut calculer le score,
-        @return le score vertical de la colonne
+        """Fonction qui permet de calculer le score d'une colonne d'une 
+        manière vertical.
+        La fonction renvoie un score en fonction des priorités suivantes : 
+            - la séquence de 1 dans le code binaire ( le nombre de 1 qui 
+            vont se suivre dans la colonne )
+            - la hauteur de la colonne ( selon le nombre de cellule encore 
+            vide dans la colonne )
+        Si le dernier pion posé n'est pas égal à 1 alors le score sera de
+        0.00, également dans le cas ou un puissance 4 n'est plus possible.
+        Si une colonne est vide, la fonction renvoie naturellement un score
+        de 4.00
+
+        Args:
+            colsbin (list[bin]): une liste de séquence binaire de colonne
+            column (int): colonne dont on veut connaitre le score
+
+        Returns:
+            int: score attribué à la colonne 
         """
 
-        # Calcul le score en hauteur d'une colonne
+        # Score en hauteur d'une colonne
         height_score:int
-        # Calcul le score d'un enchainement d'un même pion
+        # Score d'un enchainement d'un même pion
         sequence_score:int
-        # Calcul du score final en ajoutant $height_score avec $sequence_score
+        # Score final en ajoutant $height_score avec $sequence_score
         calculated_score:int
 
         # Colonne dont on veut calculer le score en bianire
         active_colbin:str = colsbin[column]
 
-        # Permet de lire le hashcode de la colonne active et d'en tirer sa valeur et sa hauteur
+        # Permet de lire le hashcode de la colonne active et d'en tirer
+        # sa valeur et sa hauteur
         (prefix_coldec , suffix_coldec) = Computer.parse_coldec(Computer.colbin_to_coldec(active_colbin))
 
         # Permet de connaitre le nombre de pion d'une même valeur qui se suivent
         ones_sequence:int = Computer.consecutive_vertical_ones(active_colbin)
 
+        # Calcul du score de la hauteur de la colonne avec un score max
+        # de 18.00. Plus la colonne est pleine plus le score diminue
         height_score = 18.00 - suffix_coldec ** 1.70
         
+        # Si le dernier pion posé de la colonne n'est pas un 1 alors
+        # le score de la hauteur est nativement à 0.00
         height_score = 0.00 if ( prefix_coldec < 2.00 ** (suffix_coldec - 1.00)) or \
                             ( suffix_coldec > 2.00 and suffix_coldec - 2.00 > ones_sequence ) \
                             else height_score
         
+        # Dans le cas ou une colonne est vide alors le score est 
+        # naturellement de 4.00
         height_score += 4.00 if suffix_coldec < 1.00 else 0.00 
 
+        # Dans le cas ou il n'y existe pas de séquence de 1 sur le 
+        # sommet de la colonne alors le score est de 0.00
         sequence_score = 0.00 if height_score < 1.00 \
                             else 4.00 ** ( ones_sequence + 1.00 )
 
+        # Calcul du score en ajoutant les scores de hauteurs et de 
+        # séquence de 1
         calculated_score = height_score + sequence_score
 
         return calculated_score
 
     @staticmethod
     def eval_horizontal_score(colsbin:list[bin], column:int) -> int:
-        """
-        Fonction qui permet de calculer le score horizontal d'une fonction.
-        @params colsbin est une liste de hashcode de colonne
-        @params column est la colonne de colsbin dont on veut calculer le score,
-        @return le score horizontal de la colonne
+        """Fonction qui permet de calculer le score d'une colonne d'une 
+        manière horizontal.
+        La fonction renvoie un score en fonction des priorités suivantes : 
+            - la séquence de 1 dans le code binaire ( le nombre de 1 qui 
+            vont se suivre sur une ligne )
+            - la range d'action d'une colonne ( direction d'action sur les
+            colonnes adjacentes pour faire un puissance 4 )
+            - le nombre de trous étant extérieurs à la séquence de 1
+        Si il n'y a plus de possibilité de faire un puissance 4 sur la 
+        ligne, la fonction renvoie naturellement un score de 0.00.
+
+        Args:
+            colsbin (list[bin]): une liste de séquence binaire de colonne
+            column (int): colonne dont on veut connaitre le score
+
+        Returns:
+            int: score attribué à la colonne 
         """
 
+        # Score en dimension de range d'une colonne ( champs d'action 
+        # de la colonne )
         width_score:int
+        # Score d'un enchainement d'un même pion
         sequence_score:int
+        # Score final en ajoutant $height_score avec $sequence_score
         calculated_score:int
 
+        # Champs d'action de la colonne dont on veut connaitre le 
+        # score
         range_column:int = len(colsbin)
+        # Hauteur de la colonne dont on veut connaitre le score
         height_column:int = len(colsbin[column])
 
+        # Compteur de 1 étant dans les colonnes qui précèdent
+        # la colonne dont on veut connaitre le score
         prev_counter_ones:int = 0
+        # Compteur de 1 étant dans les colonnes qui succèdent
+        # la colonne dont on veut connaitre le score
         next_counter_ones:int = 0
+        # Compteur du nombre de trous étant sur la ligne à évaluer
         counter_holes:int = 1
+        # False si on a pas encore rencontré de tous sur les colonnes
+        # qui précèdent la colonne dont on veut connaitre le score
+        # True sinon
         prev_hole:bool = False
+        # False si on a pas encore rencontré de tous sur les colonnes
+        # qui succèdent la colonne dont on veut connaitre le score
+        # True sinon
         next_hole:bool = False
 
+        # Séquence de 1 sur une ligne
         ones_sequence:int = 0
 
         # Analyse des colonnes qui précèdent la colonne active
         for col in range(column - 1, -1, -1):
+            # Colonne qu'on va analyser remit à l'endroit
             colbin_tmp = colsbin[col][::-1]
+            # Hauteur de la colonne qu'on va analyser
             height_colbin_tmp = len(colbin_tmp)
+            # Dans le cas ou la colonne est assez grande pour 
+            # être testée, sinon on ajoute un trous et on
+            # précise que l'on a déjà rencontré un trous
             if height_column < height_colbin_tmp:
                 if colbin_tmp[height_column] == '1':
+                    # Si sur la colonne analysée et sur la ligne
+                    # on a un 1, alors on ajoute au nombre de 1
+                    # rencontré dans les colonnes précédentes
                     prev_counter_ones += 1
+                    # Dans le cas ou l'on est tombé sur un trous
+                    # précedemment alors on n'ajoute pas +1
+                    # au compteur de 1 consécutif
                     ones_sequence += 1 if not prev_hole else 0
+                # Sinon on casse la bouble 
                 else:
                     break
             else:
@@ -133,26 +269,52 @@ class Computer(Player):
 
         # Analyse des colonnes qui succèdent la colonne active
         for col in range(column + 1, range_column):
+            # Colonne qu'on va analyser remit à l'endroit
             colbin_tmp = colsbin[col][::-1]
+            # Hauteur de la colonne qu'on va analyser
             height_colbin_tmp = len(colbin_tmp)
+            # Dans le cas ou la colonne est assez grande pour 
+            # être testée, sinon on ajoute un trous et on
+            # précise que l'on a déjà rencontré un trous
             if height_column < height_colbin_tmp:
+                # Si sur la colonne analysée et sur la ligne
+                # on a un 1, alors on ajoute au nombre de 1
+                # rencontré dans les colonnes succèssivent
                 if colbin_tmp[height_column] == '1':
                     next_counter_ones += 1
+                    # Dans le cas ou l'on est tombé sur un trous
+                    # précedemment alors on n'ajoute pas +1
+                    # au compteur de 1 consécutif
                     ones_sequence += 1 if not next_hole else 0
+                # Sinon on casse la bouble 
                 else:
                     break
             else:
                 next_hole = True
                 counter_holes += 1
             
+        # Calcul du score du champs d'action de la colonne dont
+        # on veut connaitre le score
+        # Si l'on se trouve sur la colonne du centre alors le score
+        # est de 18.5... , dans le cas ou l'on se trouve sur une 
+        # colonne extrémiste alors le score est de 8.00
         width_score = range_column / (range_column ** 0.50) * range_column
 
+        # Compteur global de 1 sur la ligne 
         counter_ones:int = prev_counter_ones + next_counter_ones
 
+        # Compteur de 1 n'étant pas dans la séquence consécutive
         ones_unsequenced:int = ones_sequence - counter_ones
 
+        # Calcul du score de la sequence en priorisant la 
+        # séquence de 1 consécutifs, on ajoutant le nombre de 
+        # 1 étant sur la ligne mais pas dans la séquence
+        # et le nombre de trous sur la ligne coupant la séquence
         sequence_score = 4.00 ** (ones_sequence + 1.00) + 2.00 ** (ones_unsequenced + 1.00) + counter_holes * 2 
 
+        # Calcul du score final si il y a une possibilité de 
+        # puissance 4, sinon naturellement le score sera de 
+        # 0.00
         calculated_score = width_score + sequence_score if counter_ones + counter_holes > 3 else 0.00
 
         return calculated_score
