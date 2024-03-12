@@ -134,7 +134,7 @@ class Grid:
     
     def __str__(self) -> str:
         display_grid:str = ""
-        row_in_grid:str = ""
+        row_in_grid:str = "\n"
         
         for i in range(0, 6):
             row_in_grid = "⎹ "
@@ -142,6 +142,6 @@ class Grid:
                 row_in_grid += str(self.__get_column(j).get_cell(i)) + " ⎹ "
             display_grid = row_in_grid + "\n" +  display_grid
             
-        display_grid += "  1   2   3   4   5   6   7"
+        display_grid += "  1   2   3   4   5   6   7\n"
         
         return display_grid

@@ -16,15 +16,14 @@ class Game:
         pass
     
     def main(self) -> None:
-        level_ia = self.__set_level_ia()
         game_mode = self.__select_game_mode()
 
         player_order:int = 0
 
         if game_mode == 1: 
-            self.__solo_game(level_ia)
+            self.__solo_game()
             player_order = randint(0,1)
-        else: self.__ia_game(level_ia)
+        else: self.__ia_game()
 
         if game_mode == 1:
             if player_order == 0:
@@ -38,35 +37,43 @@ class Game:
         
         self.__display_grid()
         if joueur_gagnant != -1:
-            print("Victoire de ", self.__players[joueur_gagnant].get_name())
+            print("Victoire de " + self.__players[joueur_gagnant].get_name())
         else:
             print("Égalité")
        
     def __select_game_mode(self) -> None:
         game_mode = 1
-        game_mode_input = input("Mode de jeu : \n(1) joueur vs ordinateur\n(2) ordinateur vs ordinateur\nVeuillez choisir un mode de jeu : ")
+        game_mode_input = input("Modes de jeu : \n\n(1) joueur vs ordinateur\n(2) ordinateur vs ordinateur\n\nVeuillez choisir un mode de jeu : ")
         if game_mode_input.isdigit():
             game_mode = int(game_mode_input)
         if game_mode > 2 or game_mode < 1:
             game_mode = 1
         return game_mode
-        
+    
+    def __define_new_ia(self, id) -> Computer:
+        name_ia = "iA_" + str(id)
+        level_ia = self.__set_level_ia(name_ia)
+        new_ia = Computer(name_ia, level_ia)
+        return new_ia
 
-    def __solo_game(self, level_ia) -> None:
+    def __solo_game(self) -> None:
         new_player:Player = self.__define_new_player()
         self.__players[0] = new_player
-        self.__players[1] = Computer('iA', level_ia)
+        new_ia:Computer = self.__define_new_ia(1)
+        self.__players[1] = new_ia
          
-    def __ia_game(self, level_ia) -> None:
-        self.__players[0] = Computer('iA_1', level_ia)
-        self.__players[1] = Computer('iA_2', level_ia)
+    def __ia_game(self) -> None:
+        new_ia:Computer = self.__define_new_ia(1)
+        self.__players[0] = new_ia
+        new_ia:Computer = self.__define_new_ia(2)
+        self.__players[1] = new_ia
 
-    def __set_level_ia(self) -> int:
+    def __set_level_ia(self, name_ia) -> int:
         level_ia = 5
         level_ia_is_ok = False
         try_input = 1
         while not level_ia_is_ok:
-            level_ia_input = input("Choisir le niveau de l'iA (1 à 5) : ")
+            level_ia_input = input("Choisir le niveau de l'" + name_ia + " (1 à 5) : ")
             if level_ia_input.isdigit():
                 level_ia = int(level_ia_input)
             if level_ia > 5 or level_ia < 1 or level_ia_input.isalpha():
@@ -76,7 +83,7 @@ class Game:
 
             try_input += 1
 
-        print("Niveau de l'ia : " + str(level_ia))
+        print("Niveau de l'" + name_ia + " : " + str(level_ia))
         
         return level_ia 
 
